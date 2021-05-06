@@ -17,6 +17,16 @@
  **/
 
 
+// Include the SD library
+#include <SD.h>                      
+#define SD_ChipSelectPin 53  // uses hardware SS pin 53 on Mega2560
+
+
+// Include the TMRpcm and SPI library (used for playing wav files)
+#include <TMRpcm.h>
+#include <SPI.h>
+
+
 // Include the 4 digit display library to display the score
 #include <TM1637Display.h>
 
@@ -72,6 +82,8 @@ enum {BEFORE, STARTED, LOST};
 // Create display object of type TM1637Display:
 TM1637Display display = TM1637Display(CLK, DIO);
 
+// Create an object for use
+TMRpcm tmrpcm;
 
 // Pins where the 8x8 LED matrix display is connected:
 const byte rows[] = {
@@ -156,6 +168,21 @@ void setup() {
   Serial.begin(9600);
 
 
+  // Setting the speaker pin
+  tmrpcm.speakerPin = 46;
+
+
+  // See if the card is present and can be initialized:
+  if (!SD.begin(SD_ChipSelectPin)) {  
+    Serial.println("SD fail");  
+    return;   // don't do anything more if not
+
+  }
+  else{   
+    Serial.println("SD ok");   
+  }
+
+
   // Setup the buttons:
   pinMode(BUTTONL, INPUT_PULLUP);
   pinMode(BUTTONR, INPUT_PULLUP);
@@ -175,6 +202,10 @@ void setup() {
 
   // Set the brightness of the 4 digit display
   display.setBrightness(7);
+
+  //check
+  tmrpcm.setVolume(5);
+  
 
 }
 
@@ -208,6 +239,7 @@ void loop() {
     drawScreen(S);
     if (LButtonState != LOW) LAlreadyPressed = false;
     if (RButtonState != LOW) RAlreadyPressed = false;
+    if (!tmrpcm.isPlaying()) tmrpcm.play((char *)"start.wav"); // (char *) to get rid off the warnings
     // Serial.println("Drew a S");
   }
   
@@ -317,6 +349,9 @@ void turnOn() {
 
     // Show score
     display.showNumberDec(score);
+
+    // Stop the music
+    tmrpcm.stopPlayback();
   }
 }
 
