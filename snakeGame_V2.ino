@@ -9,6 +9,8 @@
  * There is also a speaker and a SD card connected to the 
  * Arduino, to provide sound effects
  * 
+ * Note: Serial prints slows the game
+ * 
  * Created in May 2021
  * by Michal Benes
  * 
@@ -21,6 +23,10 @@
 
 // The directions of the Snake (0, 1, 2, 3):
 enum {UP, RIGHT, DOWN, LEFT};
+
+
+// The modes of the game (Before start, in the game, lost)
+enum {BEFORE, STARTED, LOST};
 
 
 // Change the speed of the game (lower number = faster)
@@ -81,40 +87,6 @@ const byte col[] = {
 
 
 
-void setup() {
-
-  // Open Serial port:
-  Serial.begin(9600);
-
-
-  // Setup the buttons:
-  pinMode(BUTTONL, INPUT_PULLUP);
-  pinMode(BUTTONR, INPUT_PULLUP);
-
-
-  // Setting all the 8x8 display pins to output
-  for (byte i = 2; i <= 13; i++) pinMode(i, OUTPUT);
-  pinMode(A0, OUTPUT);
-  pinMode(A1, OUTPUT);
-  pinMode(A2, OUTPUT);
-  pinMode(A3, OUTPUT);
-
-
-  // Clear the 4 digit display
-  display.clear();
-
-
-  // Set the brightness of the 4 digit display
-  display.setBrightness(7);
-
-}
-
-
-
-// -----------------------------------------------------------------------------------------------
-
-
-
 /**
  * Global variables:
  **/
@@ -124,11 +96,21 @@ void setup() {
 // 1 = led is turned off, 0 = led shines
 byte NONE[] = {B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111};
 byte ALL[] = {B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000,B00000000};
+
+
+// Writes 'S' and 'L', r for rotated if needed
+byte S[] = {B11111111,B11000011,B11011111,B11011111,B11000011,B11111011,B11000011,B11111111};
+// byte Sr[] = {B11111111,B11000011,B11011111,B11000011,B11111011,B11111011,B11000011,B11111111};
+byte L[] = {B11111111,B11000011,B11111011,B11111011,B11111011,B11111011,B11111011,B11111111};
+// byte Lr[] = {B11111111,B11011111,B11011111,B11011111,B11011111,B11011111,B11000011,B11111111};
+
+
+// The snake is 'projected' there                                    
 byte CPY[] = {B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111};
 
 
-// Pause/Start
-bool on = 0;
+// Pause/Started/Lost
+unsigned int state = BEFORE;
 
 
 // The direction of the Snake is store there:
@@ -168,15 +150,79 @@ bool RButtonState = LOW;
 
 
 
+void setup() {
+
+  // Open Serial port:
+  Serial.begin(9600);
+
+
+  // Setup the buttons:
+  pinMode(BUTTONL, INPUT_PULLUP);
+  pinMode(BUTTONR, INPUT_PULLUP);
+
+
+  // Setting all the 8x8 display pins to output
+  for (byte i = 2; i <= 13; i++) pinMode(i, OUTPUT);
+  pinMode(A0, OUTPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  pinMode(A3, OUTPUT);
+
+
+  // Clear the 4 digit display
+  display.clear();
+
+
+  // Set the brightness of the 4 digit display
+  display.setBrightness(7);
+
+}
+
+
+
+// -----------------------------------------------------------------------------------------------
+
+
+
 void loop() {
+
+  /**
+   * DEBUG
+   * */
+
+  // Serial.print("state = ");
+  // Serial.println(state);
+
+  // Serial.print("dir = ");
+  // Serial.println(dir);
+
+  // END of debug
+
 
   // Read the buttons:
   readButtons();
+
+
+  // Display 'S' if the game has not started yet
+  if (state == BEFORE) {
+    drawScreen(S);
+    if (LButtonState != LOW) LAlreadyPressed = false;
+    if (RButtonState != LOW) RAlreadyPressed = false;
+    // Serial.println("Drew a S");
+  }
   
 
   // If anything is pressed at the really beginning, the game starts
   turnOn();
  
+
+  // Display 'L' if you lost the game
+  if (state == LOST) {
+    drawScreen(L);
+    // Serial.println("Drew a L");
+    backAgain();
+  }
+
 
   // TODO: if both buttons are pressed at one time = pause the game
 
@@ -184,11 +230,12 @@ void loop() {
   // Changing the direction of the Snake if the buttons are pressed (seperately)
   changeDirection();
  
+
   // Move the snake 'internally', if the time is equal to SPEED
   moveSnake();
   
   
-  if (on == 0) timeCount = 0;
+  if (state == BEFORE) timeCount = 0;
 
   // Move the snake 'externally' (change will be seenable only once in SPEED times)
   drawScreen(CPY);
@@ -208,6 +255,7 @@ void loop() {
 /**
  * Functions
  **/
+
 
 // Function used to 'paint' on the screen
 void  drawScreen(byte buffer2[])
@@ -243,17 +291,17 @@ void readButtons() {
 
 // Changing the Snake's direction in case of a button press
 void changeDirection() {
-  if (on && !LAlreadyPressed && LButtonState == LOW && RButtonState != LOW) {
+  if (state == STARTED && !LAlreadyPressed && LButtonState == LOW && RButtonState != LOW) {
     if (dir == 3) dir = 0;
     else dir++;
-    Serial.println("Direction increased");
+    // Serial.println("Direction increased");
     LAlreadyPressed = true;
   }
 
-  if (on && !RAlreadyPressed && RButtonState == LOW && LButtonState != LOW) {
+  if (state == STARTED && !RAlreadyPressed && RButtonState == LOW && LButtonState != LOW) {
     if (dir == 0) dir = 3;
     else dir--;
-    Serial.println("Direction decreased");
+    // Serial.println("Direction decreased");
     RAlreadyPressed = true;
   }
 }
@@ -261,9 +309,9 @@ void changeDirection() {
 
 // Function starts the game, if anything is pressed
 void turnOn() {
-  if (!on && (LButtonState == LOW || RButtonState == LOW)) {
-  	Serial.println("The game started");
-    on = true;
+  if (state == BEFORE && (LButtonState == LOW || RButtonState == LOW) && !LAlreadyPressed && !RAlreadyPressed) {
+  	// Serial.println("The game started");
+    state = STARTED;
     CPY[posy[0]] &= ~(1 << posx[0]);
     CPY[foody] &= ~(1 << foodx);
 
@@ -273,9 +321,19 @@ void turnOn() {
 }
 
 
+// After a lose, back to the state 0, if pressed any buttons
+void backAgain() {
+  if (LButtonState == LOW || RButtonState == LOW) {
+    state = BEFORE;
+    if (LButtonState == LOW) LAlreadyPressed = true;
+    if (RButtonState == LOW) RAlreadyPressed = true;
+  }
+}
+
+
 // Function that 'moves' the snake if the game is on
 void moveSnake() {
-  if (on && timeCount == SPEED) {
+  if (state == STARTED && timeCount == SPEED) {
 
     if (foodx == 8) { // If the food was eaten
       foodx = random(0,8);
@@ -364,7 +422,7 @@ void snakeEats() {
 void isHit() {
   for (int a = 2; a <= score; a++) {
     if (posx[0] == posx[a] && posy[0] == posy[a]) {
-      on = 0;
+      state = LOST;
       score = 1;
       dir = 0;
       for (int i = 0; i < 8; i++) {
@@ -379,6 +437,6 @@ void isHit() {
 
 // Prints the score the the digit display + Serial output
 void printScore() {
-  Serial.println(score); // Prints score
+  // Serial.println(score); // Prints score to the serial port
   display.showNumberDec(score);
 }
