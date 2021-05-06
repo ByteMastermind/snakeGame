@@ -43,6 +43,9 @@ enum {BEFORE, STARTED, LOST};
 #define SPEED 40
 
 
+// Speaker on pin:
+#define SPEAKER 46
+
 // Right and left buttons used to control the snake
 #define BUTTONL 33
 #define BUTTONR 32
@@ -169,7 +172,7 @@ void setup() {
 
 
   // Setting the speaker pin
-  tmrpcm.speakerPin = 46;
+  tmrpcm.speakerPin = SPEAKER;
 
 
   // See if the card is present and can be initialized:
@@ -252,7 +255,12 @@ void loop() {
   if (state == LOST) {
     drawScreen(L);
     // Serial.println("Drew a L");
+
+    // If the music stopped, play again:  
+    if (!tmrpcm.isPlaying()) tmrpcm.play((char *) "end.wav");
+
     backAgain();
+    
   }
 
 
@@ -360,6 +368,7 @@ void turnOn() {
 void backAgain() {
   if (LButtonState == LOW || RButtonState == LOW) {
     state = BEFORE;
+    tmrpcm.stopPlayback(); // stop playing
     if (LButtonState == LOW) LAlreadyPressed = true;
     if (RButtonState == LOW) RAlreadyPressed = true;
   }
@@ -448,6 +457,7 @@ void snakeEats() {
   if (posx[0] == foodx && posy[0] == foody) {
       foodx = 8;
       score += 1;
+      tone(SPEAKER, 329, 225.0);
       printScore();
     }
 }
