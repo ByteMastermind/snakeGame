@@ -1,4 +1,4 @@
-/**
+ /**
  * Arduino Snake game
  * 
  * The game is created for Arduino Mega 2560
@@ -13,6 +13,10 @@
  * by Michal Benes
  * 
  **/
+
+
+// Include the 4 digit display library
+#include <TM1637Display.h>
 
 
 // The directions of the Snake (0, 1, 2, 3):
@@ -39,7 +43,7 @@ enum {UP, RIGHT, DOWN, LEFT};
 #define ROW_8 9
 
 #define COL_1 10
-#define COL_2 24
+#define COL_2 11
 #define COL_3 12
 #define COL_4 13
 #define COL_5 A0
@@ -48,6 +52,12 @@ enum {UP, RIGHT, DOWN, LEFT};
 #define COL_8 A3
 
 
+// Defining the pins for the 4 digit display:
+#define CLK 34
+#define DIO 35
+
+// Create display object of type TM1637Display:
+TM1637Display display = TM1637Display(CLK, DIO);
 
 
 // -----------------------------------------------------------------------------------------------
@@ -89,6 +99,14 @@ void setup() {
   pinMode(A3, OUTPUT);
 
 
+  // Clear the 4 digit display
+  display.clear();
+
+
+  // Set the brightness of the 4 digit display
+  display.setBrightness(7);
+
+
 }
 
 
@@ -114,7 +132,12 @@ bool on = 0;
 
 
 // The direction of the Snake is store there:
-int dir = 0;
+unsigned int dir = 0;
+
+
+// Helps to make sure that the button is pressed just once
+bool LAlreadyPressed = false;
+bool RAlreadyPressed = false;
 
 
 // Helps to control the game's speed (change the game speed in the #define section ^)
@@ -227,12 +250,18 @@ void readButtons() {
 
 // Changing the Snake's direction in case of a button press
 void changeDirection() {
-  if (on && LButtonState == LOW && RButtonState != LOW) {
-    dir--;
+  if (on && !LAlreadyPressed && LButtonState == LOW && RButtonState != LOW) {
+    if (dir == 3) dir = 0;
+    else dir++;
+    Serial.println("Direction increased");
+    LAlreadyPressed = true;
   }
 
-  if (on && RButtonState == LOW && LButtonState != LOW) {
-    dir++;
+  if (on && !RAlreadyPressed && RButtonState == LOW && LButtonState != LOW) {
+    if (dir == 0) dir = 3;
+    else dir--;
+    Serial.println("Direction decreased");
+    RAlreadyPressed = true;
   }
 }
 
@@ -240,9 +269,13 @@ void changeDirection() {
 // Function starts the game, if anything is pressed
 void turnOn() {
   if (!on && (LButtonState == LOW || RButtonState == LOW)) {
-  	on = true;
+  	Serial.println("The game started");
+    on = true;
     CPY[posy[0]] &= ~(1 << posx[0]);
     CPY[foody] &= ~(1 << foodx);
+
+    // Show score
+    display.showNumberDec(score);
   }
 }
 
@@ -304,6 +337,10 @@ void moveSnake() {
 
     // Reseting the timeCount
     timeCount = 0;
+
+    // The direction can be changed again only by pressing the button again
+    if (LButtonState != LOW) LAlreadyPressed = false;
+    if (RButtonState != LOW) RAlreadyPressed = false;
   }
 }
 
@@ -343,8 +380,9 @@ void isHit() {
   }
 }
 
+
 // Prints the score the the digit display + Serial output
 void printScore() {
   Serial.println(score); // Prints score
-  // TODO
+  display.showNumberDec(score);
 }
