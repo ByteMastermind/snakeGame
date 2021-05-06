@@ -130,6 +130,7 @@ unsigned int state = BEFORE;
 
 // The direction of the Snake is store there:
 unsigned int dir = 0;
+unsigned int lastDir = 0; // For fixing bugs
 
 
 // Helps to make sure that the button is pressed just once
@@ -368,7 +369,7 @@ void turnOn() {
 
 // If both buttons are pressed, pause the game
 void toPause() {
-  if (LButtonState == LOW && RButtonState == LOW && !LAlreadyPressed && !RAlreadyPressed) {
+  if (LButtonState == LOW && RButtonState == LOW) {
     state = PAUSE;
     LAlreadyPressed = true;
     RAlreadyPressed = true;
@@ -380,8 +381,10 @@ void backPause() {
       if ((LButtonState == LOW || RButtonState == LOW) && !LAlreadyPressed && !RAlreadyPressed) {
         state = STARTED;
       }
-      if (LButtonState != LOW) LAlreadyPressed = false;
-      if (RButtonState != LOW) RAlreadyPressed = false;
+      if (LButtonState != LOW && RButtonState != LOW) {
+        LAlreadyPressed = false;
+        RAlreadyPressed = false;
+      }
   }
 }
 
@@ -401,6 +404,12 @@ void backAgain() {
 void moveSnake() {
   if (state == STARTED && timeCount == SPEED) {
 
+    if (abs(lastDir - dir) == 2) {
+      if (dir == 3) dir = 0; 
+      else dir++;
+    }
+    lastDir = dir;
+    
     if (foodx == 8) { // If the food was eaten
       foodx = random(0,8);
       foody = random(0,8);
