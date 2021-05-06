@@ -36,7 +36,7 @@ enum {UP, RIGHT, DOWN, LEFT};
 
 
 // The modes of the game (Before start, in the game, lost)
-enum {BEFORE, STARTED, LOST};
+enum {BEFORE, STARTED, LOST, PAUSE};
 
 
 // Change the speed of the game (lower number = faster)
@@ -224,8 +224,8 @@ void loop() {
    * DEBUG
    * */
 
-  // Serial.print("state = ");
-  // Serial.println(state);
+  Serial.print("state = ");
+  Serial.println(state);
 
   // Serial.print("dir = ");
   // Serial.println(dir);
@@ -264,7 +264,8 @@ void loop() {
   }
 
 
-  // TODO: if both buttons are pressed at one time = pause the game
+  toPause();
+  backPause();
 
 
   // Changing the direction of the Snake if the buttons are pressed (seperately)
@@ -275,7 +276,7 @@ void loop() {
   moveSnake();
   
   
-  if (state == BEFORE) timeCount = 0;
+  if (state == BEFORE || state == PAUSE) timeCount = 0;
 
   // Move the snake 'externally' (change will be seenable only once in SPEED times)
   drawScreen(CPY);
@@ -354,12 +355,33 @@ void turnOn() {
     state = STARTED;
     CPY[posy[0]] &= ~(1 << posx[0]);
     CPY[foody] &= ~(1 << foodx);
+    
 
     // Show score
     display.showNumberDec(score);
 
     // Stop the music
     tmrpcm.stopPlayback();
+  }
+}
+
+
+// If both buttons are pressed, pause the game
+void toPause() {
+  if (LButtonState == LOW && RButtonState == LOW && !LAlreadyPressed && !RAlreadyPressed) {
+    state = PAUSE;
+    LAlreadyPressed = true;
+    RAlreadyPressed = true;
+  }
+}
+
+void backPause() {
+  if (state == PAUSE) {
+      if ((LButtonState == LOW || RButtonState == LOW) && !LAlreadyPressed && !RAlreadyPressed) {
+        state = STARTED;
+      }
+      if (LButtonState != LOW) LAlreadyPressed = false;
+      if (RButtonState != LOW) RAlreadyPressed = false;
   }
 }
 
