@@ -4,7 +4,7 @@
  * The game is created for Arduino Mega 2560
  * 
  * Control the snakes using two buttons, eat food and try
- * not to hit yourself = end of game
+ * not to hit your body = end of game
  * 
  * There is also a speaker and a SD card connected to the 
  * Arduino, to provide sound effects
@@ -15,7 +15,7 @@
  **/
 
 
-// Include the 4 digit display library
+// Include the 4 digit display library to display the score
 #include <TM1637Display.h>
 
 
@@ -56,13 +56,15 @@ enum {UP, RIGHT, DOWN, LEFT};
 #define CLK 34
 #define DIO 35
 
-// Create display object of type TM1637Display:
-TM1637Display display = TM1637Display(CLK, DIO);
+
 
 
 // -----------------------------------------------------------------------------------------------
 
 
+
+// Create display object of type TM1637Display:
+TM1637Display display = TM1637Display(CLK, DIO);
 
 
 // Pins where the 8x8 LED matrix display is connected:
@@ -76,7 +78,6 @@ const byte col[] = {
 
 
 // -----------------------------------------------------------------------------------------------
-
 
 
 
@@ -105,7 +106,6 @@ void setup() {
 
   // Set the brightness of the 4 digit display
   display.setBrightness(7);
-
 
 }
 
@@ -164,10 +164,7 @@ bool RButtonState = LOW;
 
 
 
-
 // -----------------------------------------------------------------------------------------------
-
-
 
 
 
@@ -204,11 +201,7 @@ void loop() {
 
 
 
-
-
 // -----------------------------------------------------------------------------------------------
-
-
 
 
 
@@ -290,40 +283,11 @@ void moveSnake() {
     }
     CPY[foody] &= ~(1 << foodx);
     
-    
     CPY[posy[score]] |= 1 << posx[score];
 
+    // Moving the snake's head in specific direction:
+    moveHead();
 
-    // Moving the snake in specific direction:
-    switch (dir) {
-      case UP: {
-        posy[0] += 1;
-        if (posy[0] == 8) posy[0] = 0;
-        break;
-      }
-
-      case RIGHT: {
-        posx[0]-= 1;
-        if (posx[0] == -1) posx[0] = 7;
-        break;
-      }
-
-      case DOWN: {
-        posy[0] -= 1;
-        if (posy[0] == -1) posy[0] = 7;
-        break;
-      }
-
-      case LEFT: {
-        posx[0] += 1;
-        if (posx[0] == 8) posx[0]= 0;
-        break;
-      }
-
-      default: break;
-    }
-
-    
     // "Moving the body" :
     moveBody();
 
@@ -341,6 +305,38 @@ void moveSnake() {
     // The direction can be changed again only by pressing the button again
     if (LButtonState != LOW) LAlreadyPressed = false;
     if (RButtonState != LOW) RAlreadyPressed = false;
+  }
+}
+
+
+// Move the head in specific direction
+void moveHead() {
+  switch (dir) {
+    case UP: {
+      posy[0] += 1;
+      if (posy[0] == 8) posy[0] = 0;
+      break;
+    }
+
+    case RIGHT: {
+      posx[0]-= 1;
+      if (posx[0] == -1) posx[0] = 7;
+      break;
+    }
+
+    case DOWN: {
+      posy[0] -= 1;
+      if (posy[0] == -1) posy[0] = 7;
+      break;
+    }
+
+    case LEFT: {
+      posx[0] += 1;
+      if (posx[0] == 8) posx[0]= 0;
+      break;
+    }
+
+    default: break;
   }
 }
 
