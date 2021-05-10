@@ -3,10 +3,10 @@
 
 > TODO:
 >
-> * Find ideal music format
+> * <del> Find ideal music format </del>
 >
-> * Find pin to put 11 to (or find playable pin)
+> * <del> Find pin to put 11 to (or find playable pin) </del>
 >
-> * End, eat, start music / sound effect
+> * <del> End, eat, start music / sound effect </del>
 >
-> * Documentation
+> * <del> Documentation </del>
