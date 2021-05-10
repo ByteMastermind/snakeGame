@@ -80,13 +80,18 @@ enum {BEFORE, STARTED, LOST, PAUSE};
 
 // -----------------------------------------------------------------------------------------------
 
+/**
+ * Global variables:
+ **/
 
 
 // Create display object of type TM1637Display:
 TM1637Display display = TM1637Display(CLK, DIO);
 
+
 // Create an object for use
 TMRpcm tmrpcm;
+
 
 // Pins where the 8x8 LED matrix display is connected:
 const byte rows[] = {
@@ -95,16 +100,6 @@ const byte rows[] = {
 const byte col[] = {
   COL_1,COL_2, COL_3, COL_4, COL_5, COL_6, COL_7, COL_8
 };
-
-
-
-// -----------------------------------------------------------------------------------------------
-
-
-
-/**
- * Global variables:
- **/
 
 
 // Useful reset variables for 8x8 display:
@@ -225,8 +220,8 @@ void loop() {
    * DEBUG
    * */
 
-  Serial.print("state = ");
-  Serial.println(state);
+  // Serial.print("state = ");
+  // Serial.println(state);
 
   // Serial.print("dir = ");
   // Serial.println(dir);
@@ -308,10 +303,9 @@ void  drawScreen(byte buffer2[])
       digitalWrite(rows[i], HIGH);    //initiate whole row
       for (byte a = 0; a < 8; a++)    // count next row
       {
-        // if You set (~buffer2[i] >> a) then you will have positive
         digitalWrite(col[a], (buffer2[i] >> a) & 0x01); // initiate whole column
         
-        delayMicroseconds(100);       // uncoment deley for diferent speed of display
+        delayMicroseconds(100);       // uncoment delay for diferent speed of display
         //delayMicroseconds(1000);
         //delay(10);
         //delay(100);
@@ -363,6 +357,8 @@ void turnOn() {
 
     // Stop the music
     tmrpcm.stopPlayback();
+
+    tone(SPEAKER, 329, 225.0);
   }
 }
 
